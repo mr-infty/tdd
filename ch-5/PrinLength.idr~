@@ -1,0 +1,3 @@
+printLength : IO ()
+printLength = getLine >>= \result => ?printLength_rhs1
+
