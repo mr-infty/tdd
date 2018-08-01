@@ -12,9 +12,9 @@ data VectUnknown : Type -> Type where
 readVect : IO (VectUnknown String)
 readVect = do x <- getLine
               if (x == "")
-                 then pure (MkVect _ [])
+                 then pure (MkVect Z [])
                  else do MkVect k xs <- readVect
-                         pure (MkVect _ (x :: xs))
+                         pure (MkVect (S k) (x :: xs))
 
 printVect : Show a => VectUnknown a -> IO ()
 printVect (MkVect len xs) = putStrLn (show xs ++ " (length " ++ show len ++ ")")
