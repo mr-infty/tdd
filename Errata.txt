@@ -1,0 +1,8 @@
+# Chapter 8
+
+1. (p. 233): Listing 8.11 is incorrect. It should read
+
+    exactLengthWith : (len : Nat) -> (input : Vect m a) -> Maybe (Vect len a)
+    exactLengthWith {m} len input = case decEq m len of
+                                          Yes prf => Just rewrite sym prf in input
+                                          No contra => Nothing
