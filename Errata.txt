@@ -6,3 +6,7 @@
     exactLengthWith {m} len input = case decEq m len of
                                           Yes prf => Just rewrite sym prf in input
                                           No contra => Nothing
+
+# Chapter 9
+
+1. (p. 256): There is no function called `guess`. Does this refer to `processGuess` (or `game`) maybe?

@@ -1,3 +1,5 @@
+module RemoveElem
+
 import Data.Vect
 
 myRemoveElem : (value : a) ->
@@ -8,6 +10,7 @@ myRemoveElem value (value :: ys) Here = ys
 myRemoveElem value (y :: []) (There later) = []
 myRemoveElem value (y :: (x :: xs)) (There later) = y :: (myRemoveElem value (x :: xs) later)
 
+export
 removeElem : (value : a) ->
              (xs : Vect (S n) a) ->
              (prf : Elem value xs) ->
