@@ -1,7 +1,7 @@
 module Exercises10_1
 
 -----------------------------
--- Exercise 10.1
+-- Exercise 10.1.1
 -----------------------------
 
 data Take : (n : Nat) -> (xs : List a) -> Type where
@@ -41,14 +41,10 @@ ifNotSmallerThenGTE contra {a = Z} {b = (S k)} with (contra (LTESucc (LTEZero {r
 ifNotSmallerThenGTE contra {a = (S k)} {b = Z} = LTEZero
 ifNotSmallerThenGTE contra {a = (S k)} {b = (S j)} = LTESucc (ifNotSmallerThenGTE (\prf => contra (LTESucc prf)))
 
-total
-eqIsCommutative : (a = b) -> (b = a)
-eqIsCommutative Refl = Refl
-
 inductionStep : (eqPf : x = plus (mult q (S k)) r) ->
                 (pf : S (plus k x) = a)
                 -> a = S (plus (plus k (mult q (S k))) r)
-inductionStep eqPf pf = ?inductionStep_rhs
+inductionStep eqPf pf = ?inductionStep_rhs --TODO: Proof me
 
 divWithRem : (a : Nat) ->
              (b : Nat) ->
@@ -64,11 +60,12 @@ divWithRem a (S k) {bNotZ} = case isLTE (S a) (S k) of
 
 
 -----------------------------
--- Exercise 10.2
+-- Exercise 10.1.2
 -----------------------------
 
+-- Note: Idris can't check this is total because of: Prelude.Nat.Nat implementation of Prelude.Interfaces.Integral 
 halves : List a -> (List a, List a)
 halves xs = let n = div (length xs) 2 in
                 (case Exercises10_1.take n xs of
-                      Fewer {isFewer} => ?halves_rhs_1
-                      Exact n_xs {rest} => ?halves_rhs_2)
+                      Fewer {isFewer} => ([], xs) --This can never happen; TODO: Show this can't happen using divWithRem
+                      Exact n_xs {rest} => (n_xs, rest))
