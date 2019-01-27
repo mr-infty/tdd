@@ -45,20 +45,26 @@ square_root_approx number approx = let next_approx = (approx + number/approx)/2 
 -- Exercise 11.1.4
 -----------------------------
 
--- TODO: Figure out why the definition below throws a type error and implement 
--- version of square_root_bound that uses Approx type.
+-- TODO: Implement version of square_root_bound that uses Approx type.
 
-{-
--- This fails
-data Approx : (f : a -> b) -> (y : b) -> (prec : b) -> Type where
-  TooManyIterations : (x : a) -> Approx f y prec
-  CloseEnough : (Neg b, Abs b, Ord b) => (x : a) -> (pf : abs (y - f x) < prec = True) -> Approx f y prec
--}
+-- The version below fails to type check because Idris doesn't identify the `b` in the definition of the constructore
+-- with the `b` in the definition of the data type (thanks to Jacob Thomas Errington <jake@mail.jerrington.me> for
+-- explaining this to me!)
+--
+--     data Approx : (f : a -> b) -> (y : b) -> (prec : b) -> Type where
+--       TooManyIterations : (x : a) -> Approx f y prec
+--       CloseEnough : (Neg b, Abs b, Ord b) => (x : a) -> (pf : abs (y - f x) < prec = True) -> Approx f y prec
+--
+-- In other words, for Idris this looks just like
+--     data Approx : (f : a -> b) -> (y : b) -> (prec : b) -> Type where
+--       TooManyIterations : (x : a) -> Approx f y prec
+--       CloseEnough : (Neg b', Abs b', Ord b') => (x : a) -> (pf : abs (y - f x) < prec = True) -> Approx f y prec
 
 -- This works
-data Approx : (f : b -> b) -> (y : b) -> (prec : b) -> Type where
-  TooManyIterations : (x : b) -> Approx f y prec
-  CloseEnough : (Neg b, Abs b, Ord b) => (x : b) -> (pf : abs (y - f x) < prec = True) -> Approx f y prec
+data Approx : (f : a -> b) -> (y : b) -> (prec : b) -> Type where
+  TooManyIterations : (x : a) -> Approx f y prec
+  CloseEnough : (Neg b, Abs b, Ord b) => {f : a -> b} -> {y : b} -> {prec : b} ->
+                                         (x : a) -> (pf : abs (y - f x) < prec = True) -> Approx f y prec
 
 {-square_fn : Double -> Double
 square_fn x = x * x
