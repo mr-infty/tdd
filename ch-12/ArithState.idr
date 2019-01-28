@@ -5,19 +5,26 @@ import System
 
 %default total
 
+public export
 record Score where
   constructor MkScore
   correct : Nat
   attempted : Nat
 
+public export
+Show Score where
+  show score = show (correct score) ++ "/" ++
+               show (attempted score) ++ "\n"
+
+public export
 record GameState where
   constructor MkGameState
   score : Score
   difficulty : Int
 
+public export
 Show GameState where
-  show st = show (correct (score st)) ++ "/" ++
-            show (attempted (score st)) ++ "\n" ++
+  show st = show (score st) ++
             "Difficulty: " ++ show (difficulty st)
 
 setDifficulty : Int -> GameState -> GameState
@@ -37,6 +44,7 @@ addCorrect = record { score->correct $= (+1),
 initState : GameState
 initState = MkGameState (MkScore 0 0) 12
 
+public export
 data Command : Type -> Type where
   PutStr : String -> Command ()
   GetLine : Command String
@@ -53,6 +61,7 @@ data ConsoleIO : Type -> Type where
   Do : Command a -> (a -> Inf (ConsoleIO b)) -> ConsoleIO b
 
 namespace CommandDo
+  public export
   (>>=) : Command a -> (a -> Command b) -> Command b
   (>>=) = Bind
 
@@ -60,15 +69,19 @@ namespace ConsoleDo
   (>>=): Command a -> (a -> Inf (ConsoleIO b)) -> ConsoleIO b
   (>>=) = Do
 
-runCommand : Command a -> IO a
-runCommand (PutStr x) = putStr x
-runCommand GetLine = getLine
-runCommand (Pure x) = pure x
-runCommand (Bind c f) = do res <- runCommand c
-                           runCommand (f res)
-runCommand (PutGameState x) = ?runCommand_rhs_1
-runCommand GetGameState = ?runCommand_rhs_2
-runCommand GetRandom = ?runCommand_rhs_3
+runCommand : Stream Int ->
+             GameState ->
+             Command a -> IO (a, Stream Int, GameState)
+runCommand rnds state (PutStr x) = do putStr x
+                                      pure ((), rnds, state)
+runCommand rnds state GetLine = do line <- getLine
+                                   pure (line, rnds, state)
+runCommand rnds state (Pure x) = pure (x, rnds, state)
+runCommand rnds state (Bind c f) = do (res, newRnds, newState) <- runCommand rnds state c
+                                      runCommand newRnds newState (f res)
+runCommand rnds state (PutGameState newState) = pure ((), rnds, newState)
+runCommand rnds state GetGameState = pure (state, rnds, state)
+runCommand (rnd :: rnds) state GetRandom = pure (rnd, rnds, state)
 
 data Input = Answer Int
            | QuitCmd
@@ -81,21 +94,29 @@ readInput prompt = do PutStr prompt
                          else Pure (Answer (cast answer))
 
 mutual
-  correct : Stream Int -> (score : Nat) -> ConsoleIO Nat
-  correct nums score = do PutStr "Correct!\n"
-                          quiz nums (score + 1)
+  correct : ConsoleIO GameState
+  correct = do st <- GetGameState
+               PutGameState (addCorrect st)
+               quiz
 
-  wrong : Stream Int -> Int -> (score : Nat) -> ConsoleIO Nat
-  wrong nums answer score = do PutStr ("Wrong, the answer is " ++ show answer ++ "\n")
-                               quiz nums score
-  quiz : Stream Int -> (score : Nat) -> ConsoleIO Nat
-  quiz (num1 :: num2 :: nums) score = do PutStr ("Score so far: " ++ show score ++ "\n")
-                                         input <- readInput (show num1 ++ " * " ++ show num2 ++ "? ")
-                                         case input of
-                                               Answer answer => if answer == num1 * num2
-                                                                   then correct nums score
-                                                                   else wrong nums (num1 * num2) score
-                                               QuitCmd => Quit score
+  wrong : Int -> ConsoleIO GameState
+  wrong answer = do PutStr ("Wrong, the answer is " ++ show answer ++ "\n")
+                    st <- GetGameState
+                    PutGameState (addWrong st)
+                    quiz
+
+  quiz : ConsoleIO GameState
+  quiz = do num1 <- GetRandom
+            num2 <- GetRandom
+            st <- GetGameState
+            PutStr (show st ++ "\n")
+
+            input <- readInput (show num1 ++ " * " ++ show num2 ++ "? ")
+            case input of
+                 Answer answer => if answer == num1 * num2
+                                     then correct
+                                     else wrong (num1 * num2)
+                 QuitCmd => Quit st
 
 data Fuel = Dry | More (Lazy Fuel)
 
@@ -103,12 +124,13 @@ partial
 forever : Fuel
 forever = More forever
 
-run : Fuel -> ConsoleIO a -> IO (Maybe a)
-run _ (Quit x) = pure (Just x)
-run Dry _ = do putStrLn "Out of fuel"
-               pure Nothing
-run (More fuel) (Do action cont) = do res <- runCommand action
-                                      run fuel (cont res)
+run : Fuel -> Stream Int -> GameState -> ConsoleIO a ->
+      IO (Maybe a, Stream Int, GameState)
+run _ rnds state (Quit x) = pure (Just x, rnds, state)
+run Dry rnds state _ = do putStrLn "Out of fuel"
+                          pure (Nothing, rnds, state)
+run (More fuel) rnds state (Do action cont) = do (res, newRnds, newState) <- runCommand rnds state action
+                                                 run fuel newRnds newState (cont res)
 
 randoms : Int -> Stream Int
 randoms seed = let seed' = 1664525 * seed + 1013904223 in
@@ -123,6 +145,6 @@ arithInputs seed = map bound (randoms seed) where
 partial
 main : IO ()
 main = do seed <- time
-          Just score <- run forever (quiz (arithInputs (fromInteger seed)) 0)
-               | Nothing => putStrLn "Ran out of fuel"
-          putStrLn ("Final score: " ++ show score)
+          (Just endState, _, _) <- run forever (arithInputs (fromInteger seed)) initState quiz
+               | (Nothing, _, _) => putStrLn "Ran out of fuel"
+          putStrLn ("Final score: " ++ show (score endState))
