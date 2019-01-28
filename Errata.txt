@@ -20,3 +20,7 @@
 1. The type of `Nat` in listing 12.33 is possibly erroneous; in any case, this listing doesn't type check as there is a mismatch between `Nat` (type of `newDiff`) and `Int` (the type that's in the record declaration).
 
 2. Listing 12.32 is a bit idiosyncratic: `score` is actually of type `GameState`, so it should be renamed to `state` and the variable `state` should be replaced by an underscore.
+
+# Chapter 13
+
+1. In listing 13.1, the declaration of `DoorCmd` is incorrect: it should be `DoorCmd : Type -> Type`.
