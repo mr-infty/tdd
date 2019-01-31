@@ -24,3 +24,5 @@
 # Chapter 13
 
 1. In listing 13.1, the declaration of `DoorCmd` is incorrect: it should be `DoorCmd : Type -> Type`.
+
+2. In listing 13.13, it should be `StkInput` instead of `RPNInput`.
