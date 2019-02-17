@@ -26,3 +26,13 @@
 1. In listing 13.1, the declaration of `DoorCmd` is incorrect: it should be `DoorCmd : Type -> Type`.
 
 2. In listing 13.13, it should be `StkInput` instead of `RPNInput`.
+
+# Chapter 14
+
+1. (soft erratum) In listing 14.3, it should (probably) read
+
+       Lost : GameCmd () (Running 0 (S letters)) (const NotRunning)
+
+   instead of 
+
+       Lost : GameCmd () (Running 0 (S guesses)) (const NotRunning)
